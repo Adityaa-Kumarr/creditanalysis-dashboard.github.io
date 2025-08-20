@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stocks Demo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .light {
+      background-color: #fff;
+      color: #111;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .toggle-btn {
+      padding: 8px 14px;
+      border: 1px solid gray;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .stocks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stock-card {
+      padding: 20px;
+      border-radius: 12px;
+      background: #222;
+      transition: transform 0.2s;
+    }
+
+    .light .stock-card {
+      background: #f0f0f0;
+    }
+
+    .stock-card:hover {
+      transform: scale(1.05);
+    }
+
+    .stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .price {
+      font-size: 1.5em;
+      margin-top: 10px;
+    }
+
+    .change {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      animation: pulse 1.5s infinite;
+    }
+
+    .green {
+      background: #16a34a;
+      color: white;
+    }
+
+    .red {
+      background: #dc2626;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Live ticker */
+    .ticker {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 50px;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #222;
+      padding-left: 60px;
+      margin-bottom: 40px;
+    }
+
+    .light .ticker {
+      background: #f0f0f0;
+    }
+
+    .live-dot {
+      position: absolute;
+      left: 15px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: red;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .live-label {
+      position: absolute;
+      left: 30px;
+      font-weight: bold;
+      color: red;
+    }
+
+    .ticker-text {
+      white-space: nowrap;
+      display: inline-block;
+      padding-left: 100%;
+      animation: marquee 15s linear infinite;
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .ticker-text span {
+      margin: 0 50px;
+    }
+
+    /* Rotating News Summary */
+    .news-summary {
+      margin-top: 22px;
+      padding: 40px;
+      background: #222;
+      border-radius: 12px;
+      overflow: hidden;
+      text-align: center;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .news-item {
+      position: absolute;
+      width: 100%;
+      opacity: 0;
+      transition: opacity 0.5s;
+      font-size: 2em;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .news-item.active {
+      opacity: 1;
+    }
+
+    .light .news-summary {
+      background: #f0f0f0;
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>📈 Trending Stocks News</h1>
+      <button class="toggle-btn" onclick="toggleTheme()">🌙 Toggle Mode</button>
+    </div>
+
+    <!-- Stock Cards -->
+    <div class="stocks">
+      <div class="stock-card">
+        <div class="stock-header">
+          <h3>TCS</h3>
+          <span class="change green">+1.2%</span>
+        </div>
+        <div class="price">₹3,615</div>
+        <p>Stock is trending upward 📈</p>
+      </div>
+
+      <div class="stock-card">
+        <div class="stock-header">
+          <h3>Reliance</h3>
+          <span class="change red">-0.8%</span>
+        </div>
+        <div class="price">₹2,450</div>
+        <p>Stock is facing a dip 📉</p>
+      </div>
+
+      <div class="stock-card">
+        <div class="stock-header">
+          <h3>Infosys</h3>
+          <span class="change green">+0.5%</span>
+        </div>
+        <div class="price">₹1,570</div>
+        <p>Stock is trending upward 📈</p>
+      </div>
+
+      <div class="stock-card">
+        <div class="stock-header">
+          <h3>HDFC Bank</h3>
+          <span class="change red">-1.1%</span>
+        </div>
+        <div class="price">₹1,720</div>
+        <p>Stock is facing a dip 📉</p>
+      </div>
+    </div>
+
+    <!-- Live News Ticker -->
+    <div class="ticker">
+      <span class="live-dot"></span>
+      <span class="live-label">LIVE</span>
+      <div class="ticker-text">
+        <span>Sensex jumps 500 points as IT stocks rally 🚨</span>
+        <span>Reliance shares dip after quarterly results 🚨</span>
+        <span>Infosys announces new AI-driven platform 🚨</span>
+        <span>HDFC Bank faces slight correction 🚨</span>
+        <span>TCS surges with strong Q2 earnings 🚨</span>
+      </div>
+    </div>
+  <!-- Rotating News Summary with Paragraph -->
+<div class="news-summary" style="margin-top: 20px; padding: 30px; background: #222; border-radius: 12px; overflow: hidden; text-align: center; max-width: 1200px; margin-left: auto; margin-right: auto; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+  
+  <div class="news-item active" style="font-size: 1.8em; font-family: 'Cursive', sans-serif; transition: opacity 0.5s;">
+    📈 NSE closes higher as IT stocks rally
+    <p style="font-size: 0.8em; margin-top: 10px;">Markets ended the day on a positive note as IT stocks led the rally. <br>Investor sentiment improved following strong corporate earnings reports.</p>
+  </div>
+
+  <div class="news-item" style="font-size: 1.8em; font-family: 'Cursive', sans-serif; transition: opacity 0.5s;">
+    💹 Sensex gains 400 points on market optimism
+    <p style="font-size: 0.8em; margin-top: 10px;">Investors were optimistic today, pushing the Sensex higher by 400 points amid <br> global market support and strong domestic cues.</p>
+  </div>
+
+  <div class="news-item" style="font-size: 1.8em; font-family: 'Cursive', sans-serif; transition: opacity 0.5s;">
+    🖥️ Infosys announces strong Q2 revenue growth
+    <p style="font-size: 0.8em; margin-top: 10px;">Infosys posted impressive Q2 revenue growth, exceeding analysts’ expectations <br>
+       and boosting investor confidence in IT sector stocks.</p>
+  </div>
+
+  <div class="news-item" style="font-size: 1.8em; font-family: 'Cursive', sans-serif; transition: opacity 0.5s;">
+    🏦 HDFC Bank sees slight correction amid sector volatility
+    <p style="font-size: 0.8em; margin-top: 10px;">HDFC Bank faced minor corrections due to profit booking, while overall<br> banking sector volatility remained moderate.</p>
+  </div>
+
+  <div class="news-item" style="font-size: 1.8em; font-family: 'Cursive', sans-serif; transition: opacity 0.5s;">
+    🚀 TCS stock surges with strong Q2 earnings
+    <p style="font-size: 0.8em; margin-top: 10px;">TCS stock showed moderate growth today, supported by strong quarterly <br> results and investor confidence in the IT sector.</p>
+  </div>
+</div>
+
+<script>
+  // Rotate news every 2 seconds
+  const newsItems = document.querySelectorAll('.news-summary .news-item');
+  let currentIndex = 0;
+
+  setInterval(() => {
+    newsItems[currentIndex].classList.remove('active');
+    currentIndex = (currentIndex + 1) % newsItems.length;
+    newsItems[currentIndex].classList.add('active');
+  }, 2000);
+</script>
+
+</body>
+</html>
