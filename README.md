@@ -87,7 +87,7 @@ flowchart LR
 ## 📦 Deliverables  
 
 - ✅ Code Repository (Private until Aug 22, 2025, 23:59 IST)  
-- ✅ Public URL (Deployed Application)  
+- ✅ Public URL - https://adityaa-kumarr.github.io/creditanalysis-dashboard.github.io/
 - ✅ Presentation Deck (PDF/PPT)  
 - ✅ 5–7 Minute Video Walkthrough  
 
