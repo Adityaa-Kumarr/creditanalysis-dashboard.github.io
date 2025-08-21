@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centered Live Stock Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    margin:0; font-family:"Segoe UI", Roboto, sans-serif; height:100vh; 
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    background:#0d1117; color:#fff; transition:all 0.3s;
+  }
+  body[data-theme="light"] { background:#f5f5f5; color:#000; }
+
+  #container {
+    width:100%; max-width:1200px; display:flex; flex-direction:column; align-items:center;
+    gap:15px;
+  }
+
+  header { width:100%; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+  .title { font-size:2rem; font-weight:bold; }
+  .live { display:flex; align-items:center; font-size:1rem; font-weight:bold; }
+  .live-dot { width:12px; height:12px; margin-right:8px; border-radius:50%; animation:blink 1s infinite; background:red; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  #themeToggle { padding:10px 15px; border-radius:8px; cursor:pointer; transition: all 0.2s; }
+  body[data-theme="dark"] #themeToggle { background:#21262d; color:#fff; }
+  body[data-theme="light"] #themeToggle { background:#e0e0e0; color:#000; }
+
+  #companySelect { padding:10px 20px; border-radius:12px; border:none; font-size:1rem; cursor:pointer; transition:all 0.2s; }
+  body[data-theme="dark"] #companySelect { background:#21262d; color:#fff; }
+  body[data-theme="light"] #companySelect { background:#e0e0e0; color:#000; }
+
+  .stock-boxes {
+    display:flex; flex-wrap:wrap; justify-content:center; gap:15px; width:100%;
+  }
+  .box {
+    padding:16px; border-radius:16px; width:140px; min-width:140px; max-width:140px;
+    text-align:center; transition:transform 0.2s; flex-shrink:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  }
+  .box:hover { transform: translateY(-5px); }
+  body[data-theme="dark"] .box { background:#161b22; box-shadow:0 6px 15px rgba(0,0,0,0.4); color:#fff; }
+  body[data-theme="light"] .box { background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15); color:#000; }
+
+  .price { font-weight:bold; margin-top:8px; font-size:1.4rem; }
+  .gain { color:#00c853; }
+  .loss { color:#ff1744; }
+  .flash { animation:flash 0.5s; }
+  @keyframes flash { 0%{opacity:0.5} 50%{opacity:1} 100%{opacity:0.5} }
+
+  #chartContainer { width:100%; height:400px; padding:20px; border-radius:20px; }
+  body[data-theme="dark"] #chartContainer { background:#161b22; box-shadow:0 6px 25px rgba(0,0,0,0.5); }
+  body[data-theme="light"] #chartContainer { background:#fff; box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+
+  #newsTicker { width:100%; overflow:hidden; padding:10px 0; border-radius:12px; white-space:nowrap; }
+  #newsTicker span { display:inline-block; padding-right:50px; animation:ticker 20s linear infinite; color:inherit; }
+  @keyframes ticker { 0% { transform: translateX(100%);} 100% { transform: translateX(-100%);} }
+  body[data-theme="dark"] #newsTicker { background:#21262d; box-shadow:0 4px 12px rgba(0,0,0,0.4); color:#fff; }
+  body[data-theme="light"] #newsTicker { background:#e0e0e0; box-shadow:0 4px 12px rgba(0,0,0,0.15); color:#000; }
+
+  @media(max-width:900px){
+    .stock-boxes { flex-direction:column; align-items:center; }
+    #chartContainer { height:300px; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+<div id="container">
+  <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
+    <select id="companySelect">
+      <option value="TATA">TATA</option>
+      <option value="Reliance">Reliance</option>
+      <option value="Infosys">Infosys</option>
+      <option value="HDFC">HDFC</option>
+      <option value="Adani">Adani</option>
+    </select>
+    <div id="themeToggle">Toggle Theme</div>
+  </div>
+
+  <header>
+    <div class="title">📈 Stock Tracker</div>
+    <div class="live"><div class="live-dot"></div>LIVE</div>
+  </header>
+
+  <div class="stock-boxes">
+    <div class="box">
+      <div>Price</div>
+      <div id="priceBox" class="price">₹1200</div>
+    </div>
+    <div class="box">
+      <div>Change</div>
+      <div id="changeBox" class="price gain">+0.00%</div>
+    </div>
+    <div class="box">
+      <div>High</div>
+      <div id="highBox" class="price">₹0</div>
+      <div id="highTime" style="font-size:0.8rem;margin-top:4px;"></div>
+    </div>
+    <div class="box">
+      <div>Low</div>
+      <div id="lowBox" class="price">₹0</div>
+      <div id="lowTime" style="font-size:0.8rem;margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <div id="chartContainer"><canvas id="stockChart"></canvas></div>
+
+  <div id="newsTicker">
+    <span>Breaking: TATA hits new high | Reliance announces quarterly results | Infosys stock surges | HDFC declares dividend | Adani Group expands operations</span>
+  </div>
+</div>
+
+<script>
+const ctx=document.getElementById("stockChart").getContext("2d");
+let labels=[], dataPoints=[], currentPrice=1200, high=currentPrice, low=currentPrice;
+const companyRanges = { "TATA":[1000,1500], "Reliance":[2000,3000], "Infosys":[800,1200], "HDFC":[1200,2000], "Adani":[500,900] };
+let currentCompany="TATA";
+
+function getGradient(ctx,color){
+    const grad=ctx.createLinearGradient(0,0,0,ctx.canvas.height);
+    grad.addColorStop(0,color+'55'); grad.addColorStop(1,color+'05');
+    return grad;
+}
+
+const stockChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:'Price',data:dataPoints,borderColor:'#00c853',backgroundColor:getGradient(ctx,'#00c853'),fill:true,tension:0.4,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000},plugins:{tooltip:{enabled:true},legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#bbb'},grid:{color:'#222'}},y:{ticks:{color:'#bbb'},grid:{color:'#222'}}}}
+});
+
+function updateDashboard(){
+    const [minPrice,maxPrice]=companyRanges[currentCompany];
+    let change=(Math.random()-0.5)*15;
+    currentPrice=Math.min(maxPrice,Math.max(minPrice,currentPrice+change));
+
+    const now=new Date();
+    const time=now.getHours()+":"+String(now.getMinutes()).padStart(2,'0')+":"+String(now.getSeconds()).padStart(2,'0');
+
+    labels.push(time); dataPoints.push(currentPrice);
+    if(labels.length>40){ labels.shift(); dataPoints.shift(); }
+
+    const color=change>=0?'#00c853':'#ff1744';
+    stockChart.data.datasets[0].borderColor=color;
+    stockChart.data.datasets[0].backgroundColor=getGradient(ctx,color);
+    stockChart.data.labels=labels;
+    stockChart.data.datasets[0].data=dataPoints;
+    stockChart.update('none');
+
+    // Boxes
+    const priceBox=document.getElementById("priceBox"); 
+    priceBox.innerText="₹"+currentPrice.toFixed(2);
+    priceBox.classList.add('flash'); setTimeout(()=>priceBox.classList.remove('flash'),500);
+
+    const changeBox=document.getElementById("changeBox"); 
+    changeBox.innerText=(change>=0?"+":"")+change.toFixed(2)+"%"; 
+    changeBox.className="price "+(change>=0?"gain":"loss")+" flash"; 
+    setTimeout(()=>changeBox.classList.remove('flash'),500);
+
+    // High / Low
+    if(currentPrice>high){ high=currentPrice; document.getElementById("highBox").innerText="₹"+high.toFixed(2); document.getElementById("highTime").innerText=time; }
+    if(currentPrice<low){ low=currentPrice; document.getElementById("lowBox").innerText="₹"+low.toFixed(2); document.getElementById("lowTime").innerText=time; }
+}
+
+setInterval(updateDashboard,3000);
+
+document.getElementById("companySelect").addEventListener("change",(e)=>{
+    currentCompany=e.target.value;
+    labels=[]; dataPoints=[];
+    const [minPrice,maxPrice]=companyRanges[currentCompany];
+    currentPrice=minPrice+Math.random()*(maxPrice-minPrice);
+    high=low=currentPrice;
+    stockChart.data.labels=[]; stockChart.data.datasets[0].data=[]; stockChart.update();
+    document.getElementById("priceBox").innerText="₹"+currentPrice.toFixed(2);
+    document.getElementById("changeBox").innerText="+0.00%";
+    document.getElementById("highBox").innerText="₹"+high.toFixed(2); document.getElementById("highTime").innerText="";
+    document.getElementById("lowBox").innerText="₹"+low.toFixed(2); document.getElementById("lowTime").innerText="";
+});
+
+document.getElementById("themeToggle").addEventListener("click",()=>{
+    document.body.dataset.theme=document.body.dataset.theme==='dark'?'light':'dark';
+    updateDashboard();
+});
+</script>
+</body>
+</html>
