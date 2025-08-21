@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Market Credit Score</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <li><a href="credit.html">💳 Credit</a></li>
+  <style>
+    body {
+      
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, rgb(126, 178, 227));
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      transition: background 0.5s ease;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 25px;
+      width: 95%;
+      max-width: 650px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    h2 { font-size: 1.8em; margin-bottom: 15px; }
+    .circle {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: conic-gradient(#00e676 var(--progress), rgba(255,255,255,0.2) 0deg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 15px auto;
+      box-shadow: 0 0 25px rgba(0, 230, 118, 0.6);
+    }
+    .circle span {
+      position: absolute;
+      font-size: 2.2em;
+      font-weight: bold;
+      color: #fff;
+    }
+    .info {
+      text-align: left;
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+    .info p { margin: 8px 0; font-size: 14px; }
+    .transactions { margin-top: 20px; text-align: left; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px; text-align: center; }
+    th { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    td { background: rgba(255,255,255,0.05); border-radius: 8px; }
+    .profit { color: #69f0ae; font-weight: bold; }
+    .loss { color: #ff5252; font-weight: bold; }
+    .summary {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      font-size: 15px;
+    }
+    canvas {
+      margin-top: 25px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    /* Toggle Button */
+    .toggle-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      padding: 10px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+    .toggle-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    @media(max-width: 600px) {
+      .circle { width: 140px; height: 140px; }
+      .circle span { font-size: 1.6em; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; }
+      td {
+        text-align: left;
+        padding: 8px;
+        background: rgba(255,255,255,0.1);
+        margin-bottom: 6px;
+      }
+      tr { margin-bottom: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Toggle Button -->
+  <button class="toggle-btn" onclick="toggleTheme()">🌙 Dark Mode</button>
+
+  <div class="card">
+    <h2>📊 Stock Market Credit Score</h2>
+    <div class="circle" id="circle" style="--progress:0deg;">
+      <span id="score">0</span>
+    </div>
+    <div class="info">
+      <p><b>Risk Level:</b> <span id="risk">Calculating...</span></p>
+      <p><b>Market Sentiment:</b> <span id="sentiment">Loading...</span></p>
+      <p><b>Volatility:</b> <span id="volatility">...</span></p>
+    </div>
+
+    <!-- Transactions -->
+    <div class="transactions">
+      <h3>💰 Transactions</h3>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Change</th></tr>
+        </thead>
+        <tbody id="transactionBody"></tbody>
+      </table>
+      <div class="summary">
+        <p><b>Monthly Total:</b> <span id="monthlyTotal">0</span> ₹</p>
+        <p><b>Realtime Balance:</b> <span id="realtimeBalance">0</span> ₹</p>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <canvas id="trendChart" height="200"></canvas>
+  </div>
+
+  <script>
+    // Credit Score
+    const score = Math.floor(Math.random() * (850 - 300 + 1)) + 300;
+    const circle = document.getElementById("circle");
+    const scoreText = document.getElementById("score");
+    const riskText = document.getElementById("risk");
+    const sentimentText = document.getElementById("sentiment");
+    const volatilityText = document.getElementById("volatility");
+
+    let current = 0;
+    const interval = setInterval(() => {
+      if (current < score) {
+        current += 5;
+        scoreText.textContent = current;
+        circle.style.setProperty("--progress", (current/850)*360 + "deg");
+      } else {
+        clearInterval(interval);
+        const sentiments = ["Bullish 📈", "Bearish 📉", "Neutral ⚖️"];
+        const volatilityLevels = ["Low 🟢", "Medium 🟠", "High 🔴"];
+        sentimentText.textContent = sentiments[Math.floor(Math.random() * sentiments.length)];
+        volatilityText.textContent = volatilityLevels[Math.floor(Math.random() * volatilityLevels.length)];
+        if (score < 500) { riskText.textContent = "High Risk 🔴"; riskText.style.color = "#ff5252"; }
+        else if (score < 700) { riskText.textContent = "Moderate Risk 🟠"; riskText.style.color = "#ffb74d"; }
+        else { riskText.textContent = "Low Risk 🟢"; riskText.style.color = "#69f0ae"; }
+      }
+    }, 20);
+
+    // Transactions
+    const transactionBody = document.getElementById("transactionBody");
+    const monthlyTotalEl = document.getElementById("monthlyTotal");
+    const realtimeBalanceEl = document.getElementById("realtimeBalance");
+
+    let monthlyTotal = 0;
+    let realtimeBalance = 0;
+    let monthlyData = Array(12).fill(0); // Jan - Dec
+
+    function addTransaction() {
+      const amount = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 500) + 50);
+      const row = document.createElement("tr");
+      const time = new Date().toLocaleTimeString();
+      row.innerHTML = `<td>${time}</td><td class="${amount > 0 ? 'profit' : 'loss'}">${amount > 0 ? "+" : ""}${amount} ₹</td>`;
+      transactionBody.prepend(row);
+      monthlyTotal += amount;
+      realtimeBalance += amount;
+      monthlyTotalEl.textContent = monthlyTotal + " ₹";
+      realtimeBalanceEl.textContent = realtimeBalance + " ₹";
+      const month = new Date().getMonth();
+      monthlyData[month] += amount;
+      updateChart();
+    }
+    setInterval(addTransaction, 3000);
+
+    // Chart.js setup
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    let chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        datasets: [{
+          label: "Monthly Credit Trend",
+          data: monthlyData,
+          borderColor: "#00e676",
+          backgroundColor: "rgba(0,230,118,0.2)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: "#fff"
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#fff" } } },
+        scales: {
+          x: { ticks: { color: "#fff" }, grid: { color: "rgba(255,255,255,0.2)" } },
+          y: { ticks: { color: "#fff" }, grid: { color: "rgba(255,255,255,0.2)" } }
+        }
+      }
+    });
+
+    function updateChart() {
+      chart.data.datasets[0].data = monthlyData;
+      chart.update();
+    }
+
+    // Dark / Light Mode Toggle
+    let darkMode = false;
+    function toggleTheme() {
+      darkMode = !darkMode;
+      const btn = document.querySelector(".toggle-btn");
+      if (darkMode) {
+        document.body.style.background = "linear-gradient(135deg, #141e30, #243b55)";
+        btn.textContent = "☀️ Light Mode";
+      } else {
+        document.body.style.background = "linear-gradient(135deg,  rgb(126, 178, 227)";
+        btn.textContent = "🌙 Dark Mode";
+      }
+    }
+    
+  </script>
+  
+</body>
+</html>
